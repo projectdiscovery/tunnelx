@@ -4,7 +4,7 @@ TunnelX is a lightweight network ingress tunnelling to local SOCKS5 proxy server
 
 ## Prerequisites
 
-- Go 1.16 or later
+- Go 1.21 or later
 
 ## Installation
 
@@ -37,6 +37,11 @@ TunnelX is a lightweight network ingress tunnelling to local SOCKS5 proxy server
     curl --proxy socks5://pdcp:$PDCP_API_KEY@x.x.x.x:45931 https://scanme.sh
     ```
 
+## Docker
+
+```
+docker run -d -e PDCP_API_KEY="XXXXXXX" tunnelx
+```
 
 ## License
 
