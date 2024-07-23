@@ -114,7 +114,7 @@ func main() {
 		gologger.Fatal().Msgf("error checking service accessibility: %v", err)
 	} else if accessible {
 		listenIp, _ = onceRemoteIp()
-		gologger.Print().Msgf("Service is accessible from the internet with ip: %s", listenIp)
+		gologger.Silent().Msgf("Service is accessible from the internet with ip: %s", listenIp)
 	} else {
 		gologger.Warning().Msgf("service is not accessible from the internet, listening on all interfaces")
 		listenIp = "0.0.0.0"
@@ -125,7 +125,7 @@ func main() {
 		gologger.Fatal().Msgf("error getting free port: %v", err)
 	}
 
-	gologger.Print().Msgf("Socks5 proxy listening on: %s", socks5proxyPort.Address)
+	gologger.Silent().Msgf("Socks5 proxy listening on: %s", socks5proxyPort.Address)
 
 	if !accessible {
 		ctx, cancel = context.WithCancel(context.Background())
@@ -144,7 +144,7 @@ func main() {
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 		go func() {
 			<-c
-			gologger.Print().Msg("Received interrupt signal, deregistering tunnel...")
+			gologger.Silent().Msg("Received interrupt signal, deregistering tunnel...")
 			if err := Out(ctx); err != nil {
 				gologger.Warning().Msgf("error deregistering tunnel: %v", err)
 			}
@@ -250,7 +250,7 @@ func createTunnelsWithGoSSH(ctx context.Context) error {
 		return err
 	}
 
-	gologger.Print().Msgf("Your tunnel is: %s:%d", punchHoleIP, reverseProxyPort.Port)
+	gologger.Silent().Msgf("Your tunnel is: %s:%d", punchHoleIP, reverseProxyPort.Port)
 
 	go func() {
 		if err := In(ctx); err != nil {
