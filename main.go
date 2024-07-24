@@ -19,9 +19,13 @@ import (
 	"time"
 
 	socks5 "github.com/armon/go-socks5"
+	"github.com/projectdiscovery/fastdialer/fastdialer"
 	"github.com/projectdiscovery/freeport"
+	"github.com/projectdiscovery/goflags"
 	"github.com/projectdiscovery/gologger"
 	"github.com/projectdiscovery/tunnelx/sshr"
+	"github.com/projectdiscovery/utils/auth/pdcp"
+	"github.com/projectdiscovery/utils/env"
 	envutil "github.com/projectdiscovery/utils/env"
 	iputil "github.com/projectdiscovery/utils/ip"
 	sliceutil "github.com/projectdiscovery/utils/slice"
@@ -35,7 +39,7 @@ var (
 	// proxy username is "pdcp" by default
 	proxyUsername = envutil.GetEnvOrDefault("PROXY_USERNAME", "pdcp")
 	// proxy password is the PDCP_API_KEY and is required
-	proxyPassword = envutil.GetEnvOrDefault("PDCP_API_KEY", "")
+	PDCPApiKey string
 
 	httpClient = &http.Client{
 		Timeout: 10 * time.Second,
@@ -70,7 +74,56 @@ var (
 	cancel           context.CancelFunc
 )
 
+type options struct {
+	PdcpAuth string
+	Allow    goflags.StringSlice
+	Deny     goflags.StringSlice
+}
+
 func main() {
+	var opts options
+	flagSet := goflags.NewFlagSet()
+	flagSet.SetDescription(`tunnelx is a lightweight network ingress tunnelling to local SOCKS5 proxy server.`)
+
+	flagSet.CreateGroup("configs", "Configurations",
+		flagSet.DynamicVar(&opts.PdcpAuth, "auth", "true", "configure projectdiscovery cloud (pdcp) api key"),
+		flagSet.StringSliceVar(&opts.Allow, "allow", nil, "allowed list of IP/CIDR's to process (file or comma separated)", goflags.FileStringSliceOptions),
+		flagSet.StringSliceVar(&opts.Deny, "deny", nil, "denied list of IP/CIDR's to process (file or comma separated)", goflags.NormalizedStringSliceOptions),
+	)
+	_ = flagSet.Parse()
+
+	pdcp.DefaultApiServer = "https://api.dev.projectdiscovery.io"
+
+	if opts.PdcpAuth == "true" {
+		pdcp.CheckNValidateCredentials("tunnelx")
+	} else if len(opts.PdcpAuth) == 36 {
+		PDCPApiKey = opts.PdcpAuth
+		ph := pdcp.PDCPCredHandler{}
+		if _, err := ph.GetCreds(); err == pdcp.ErrNoCreds {
+			apiServer := env.GetEnvOrDefault("PDCP_API_SERVER", pdcp.DefaultApiServer)
+			if validatedCreds, err := ph.ValidateAPIKey(PDCPApiKey, apiServer, "tunnelx"); err == nil {
+				_ = ph.SaveCreds(validatedCreds)
+			}
+		}
+	}
+
+	// attempt to retrieve creds from pdcp
+	ph := pdcp.PDCPCredHandler{}
+	if creds, err := ph.GetCreds(); err != nil {
+		gologger.Fatal().Msgf("PDCP_API_KEY is not configured")
+	} else {
+		PDCPApiKey = creds.APIKey
+	}
+
+	defaultOptions := fastdialer.DefaultOptions
+	defaultOptions.Allow = opts.Allow
+	defaultOptions.Deny = opts.Deny
+	fastDialer, err := fastdialer.NewDialer(defaultOptions)
+	if err != nil {
+		gologger.Fatal().Msgf("error creating fastdialer: %v", err)
+	}
+	defer fastDialer.Close()
+
 	if iputil.IsIP(PunchHoleHost) {
 		punchHoleIP = PunchHoleHost
 	} else {
@@ -93,14 +146,12 @@ func main() {
 		Logger: logger,
 	}
 
-	if proxyPassword == "" {
-		gologger.Fatal().Msgf("PDCP_API_KEY is not configured")
-	}
-
 	auth := socks5.UserPassAuthenticator{
-		Credentials: &credentialStore{user: proxyUsername, password: proxyPassword},
+		Credentials: &credentialStore{user: proxyUsername, password: PDCPApiKey},
 	}
 	conf.AuthMethods = []socks5.Authenticator{auth}
+
+	conf.Dial = fastDialer.Dial
 
 	server, err := socks5.New(conf)
 	if err != nil {
@@ -234,7 +285,7 @@ func createTunnelsWithGoSSH(ctx context.Context) error {
 	sshConfig := &ssh.ClientConfig{
 		User: proxyUsername,
 		Auth: []ssh.AuthMethod{
-			ssh.Password(proxyPassword),
+			ssh.Password(PDCPApiKey),
 		},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
@@ -267,7 +318,7 @@ func getFreePortFromServer() (*freeport.Port, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("X-API-Key", proxyPassword)
+	req.Header.Set("X-API-Key", PDCPApiKey)
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -311,7 +362,7 @@ func In(ctx context.Context) error {
 			q.Add("os", runtime.GOOS)
 			q.Add("arch", runtime.GOARCH)
 			req.URL.RawQuery = q.Encode()
-			req.Header.Set("X-API-Key", proxyPassword)
+			req.Header.Set("X-API-Key", PDCPApiKey)
 			resp, err := httpClient.Do(req)
 			if err != nil {
 				log.Printf("failed to call /in endpoint: %v", err)
@@ -338,7 +389,7 @@ func Out(ctx context.Context) error {
 		log.Printf("failed to create request: %v", err)
 		return err
 	}
-	req.Header.Set("X-API-Key", proxyPassword)
+	req.Header.Set("X-API-Key", PDCPApiKey)
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		log.Printf("failed to call /out endpoint: %v", err)
