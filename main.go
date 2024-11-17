@@ -19,12 +19,14 @@ import (
 	"time"
 
 	socks5 "github.com/armon/go-socks5"
+	"github.com/projectdiscovery/tunnelx/sshr"
 	"github.com/projectdiscovery/freeport"
 	"github.com/projectdiscovery/gologger"
-	"github.com/projectdiscovery/tunnelx/sshr"
+	"github.com/projectdiscovery/gologger/levels"
 	envutil "github.com/projectdiscovery/utils/env"
 	iputil "github.com/projectdiscovery/utils/ip"
 	sliceutil "github.com/projectdiscovery/utils/slice"
+	"github.com/rs/xid"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -36,6 +38,9 @@ var (
 	proxyUsername = envutil.GetEnvOrDefault("PROXY_USERNAME", "pdcp")
 	// proxy password is the PDCP_API_KEY and is required
 	proxyPassword = envutil.GetEnvOrDefault("PDCP_API_KEY", "")
+
+	AgentID   = envutil.GetEnvOrDefault("AGENT_ID", xid.New().String())
+	AgentName = envutil.GetEnvOrDefault("AGENT_NAME", xid.New().String())
 
 	httpClient = &http.Client{
 		Timeout: 10 * time.Second,
@@ -71,6 +76,8 @@ var (
 )
 
 func main() {
+	gologger.DefaultLogger.SetMaxLevel(levels.LevelVerbose)
+
 	if iputil.IsIP(PunchHoleHost) {
 		punchHoleIP = PunchHoleHost
 	} else {
@@ -114,7 +121,7 @@ func main() {
 		gologger.Fatal().Msgf("error checking service accessibility: %v", err)
 	} else if accessible {
 		listenIp, _ = onceRemoteIp()
-		gologger.Silent().Msgf("Service is accessible from the internet with ip: %s", listenIp)
+		gologger.Print().Msgf("Service is accessible from the internet with ip: %s", listenIp)
 	} else {
 		gologger.Warning().Msgf("service is not accessible from the internet, listening on all interfaces")
 		listenIp = "0.0.0.0"
@@ -125,13 +132,12 @@ func main() {
 		gologger.Fatal().Msgf("error getting free port: %v", err)
 	}
 
-	gologger.Silent().Msgf("Socks5 proxy listening on: %s", socks5proxyPort.Address)
+	gologger.Print().Msgf("Socks5 proxy listening on: %s", socks5proxyPort.NetListenAddress)
 
 	if !accessible {
 		ctx, cancel = context.WithCancel(context.Background())
 		defer cancel()
 
-		// deregister existing tunnel if any
 		_ = Out(ctx)
 
 		reverseProxyPort, err = getFreePortFromServer()
@@ -144,7 +150,7 @@ func main() {
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 		go func() {
 			<-c
-			gologger.Silent().Msg("Received interrupt signal, deregistering tunnel...")
+			gologger.Print().Msg("Received interrupt signal, deregistering tunnel...")
 			if err := Out(ctx); err != nil {
 				gologger.Warning().Msgf("error deregistering tunnel: %v", err)
 			}
@@ -171,7 +177,7 @@ func main() {
 		}()
 	}
 
-	if err := server.ListenAndServe("tcp", socks5proxyPort.Address); err != nil {
+	if err := server.ListenAndServe("tcp", socks5proxyPort.NetListenAddress); err != nil {
 		gologger.Fatal().Msgf("error listening and serving: %v", err)
 	}
 }
@@ -232,7 +238,7 @@ func getLocalIPs() ([]string, error) {
 func createTunnelsWithGoSSH(ctx context.Context) error {
 	server := fmt.Sprintf("%s:%s", punchHoleIP, PunchHolePort)
 	sshConfig := &ssh.ClientConfig{
-		User: proxyUsername,
+		User: AgentID,
 		Auth: []ssh.AuthMethod{
 			ssh.Password(proxyPassword),
 		},
@@ -250,11 +256,16 @@ func createTunnelsWithGoSSH(ctx context.Context) error {
 		return err
 	}
 
-	gologger.Silent().Msgf("Your tunnel is: %s:%d", punchHoleIP, reverseProxyPort.Port)
+	gologger.Print().Msgf("Your tunnel is: %s:%d", punchHoleIP, reverseProxyPort.Port)
 
 	go func() {
 		if err := In(ctx); err != nil {
 			gologger.Fatal().Msgf("error registering tunnel: %v", err)
+		}
+		if AgentName != "" {
+			if err := renameAgent(ctx, AgentName); err != nil {
+				gologger.Error().Msgf("error renaming agent: %v", err)
+			}
 		}
 	}()
 
@@ -310,6 +321,7 @@ func In(ctx context.Context) error {
 			q := req.URL.Query()
 			q.Add("os", runtime.GOOS)
 			q.Add("arch", runtime.GOARCH)
+			q.Add("id", AgentID)
 			req.URL.RawQuery = q.Encode()
 			req.Header.Set("X-API-Key", proxyPassword)
 			resp, err := httpClient.Do(req)
@@ -339,6 +351,9 @@ func Out(ctx context.Context) error {
 		return err
 	}
 	req.Header.Set("X-API-Key", proxyPassword)
+	q := req.URL.Query()
+	q.Add("id", AgentID)
+	req.URL.RawQuery = q.Encode()
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		log.Printf("failed to call /out endpoint: %v", err)
@@ -353,5 +368,37 @@ func Out(ctx context.Context) error {
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status code from /out endpoint: %v, body: %s", resp.StatusCode, string(body))
 	}
+	return nil
+}
+
+func renameAgent(ctx context.Context, name string) error {
+	endpoint := fmt.Sprintf("http://%s:%s/rename", punchHoleIP, PunchHoleHTTPPort)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %v", err)
+	}
+
+	q := req.URL.Query()
+	q.Add("id", AgentID)
+	q.Add("name", name)
+	req.URL.RawQuery = q.Encode()
+
+	req.Header.Set("X-API-Key", proxyPassword)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to call /rename endpoint: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code from /rename endpoint: %d, body: %s", resp.StatusCode, string(body))
+	}
+
 	return nil
 }
