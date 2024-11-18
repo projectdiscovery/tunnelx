@@ -33,7 +33,7 @@ import (
 )
 
 var (
-	PunchHoleHost     = envutil.GetEnvOrDefault("PUNCH_HOLE_HOST", "proxy-dev.projectdiscovery.io")
+	PunchHoleHost     = envutil.GetEnvOrDefault("PUNCH_HOLE_HOST", "proxy.projectdiscovery.io")
 	PunchHolePort     = envutil.GetEnvOrDefault("PUNCH_HOLE_SSH_PORT", "20022")
 	PunchHoleHTTPPort = envutil.GetEnvOrDefault("PUNCH_HOLE_HTTP_PORT", "8880")
 	// proxy username is "pdcp" by default
