@@ -49,6 +49,9 @@ You can run TunnelX on different networks by specifying unique network names. Th
 
 3. After successful connection, navigate to [ProjectDiscovery Scans](https://cloud.projectdiscovery.io/scans) to create and manage scans using the established connection.
 
+![Internal Network](https://github.com/user-attachments/assets/d6e58159-3c2d-4902-a0a9-64d6f07da64c)
+
+
 ## Command-Line Usage
 
 ### Flags
