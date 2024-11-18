@@ -7,6 +7,13 @@ TunnelX is a lightweight ingress tunneling tool designed to create a secure SOCK
 - Authenticated connections using your [ProjectDiscovery API key](https://cloud.projectdiscovery.io/?ref=api_key).
 - Isolated traffic routing for internal scanning and discovery.
 
+
+## How It Works
+
+TunnelX creates secure ingress tunnels using your ProjectDiscovery API key, enabling isolated internal scanning via a SOCKS5 proxy.
+
+You can run TunnelX on different networks by specifying unique network names. This allows you to scan multiple networks independently, with each connection appearing as a selectable option in the network dropdown menu on the [ProjectDiscovery Scans](https://cloud.projectdiscovery.io/scans) page.
+
 ## Quick Start
 
 ### Docker (Recommended)
@@ -70,8 +77,6 @@ tunnelx -auth <your_api_key>
 **Running in the Background**
 
 To keep tunnelx running continuously in the background, follow these instructions based on your operating system:
-
-Linux & macOS
 
 ```sh
 # Linux & MacOS
