@@ -19,6 +19,7 @@ type Config struct {
 	LocalTarget      string
 	RemoteListenAddr string
 	SSHServer        string
+	SuccessHook      func()
 
 	SSHClientConfig *ssh.ClientConfig
 
@@ -44,6 +45,10 @@ func (s *SSHR) Run(ctx context.Context) error {
 		return err
 	}
 	defer listener.Close()
+
+	if s.config.SuccessHook != nil {
+		s.config.SuccessHook()
+	}
 
 	for {
 		select {
