@@ -82,7 +82,7 @@ var (
 )
 
 func main() {
-	gologger.DefaultLogger.SetMaxLevel(levels.LevelVerbose)
+	gologger.DefaultLogger.SetMaxLevel(levels.LevelInfo)
 
 	if err := parseArguments(); err != nil {
 		gologger.Fatal().Msgf("error parsing arguments: %v", err)
