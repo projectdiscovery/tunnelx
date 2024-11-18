@@ -213,6 +213,7 @@ func printConnectionFailure(err error) {
 func printConnectionSuccess() {
 	gologger.Info().Msgf("Session established. Leave this terminal open to enable continuous discovery and scanning.")
 	gologger.Info().Msgf("Your network is a protected—connection, isolated and not exposed to the internet.")
+	gologger.Info().Msgf("To create a scan, visit: https://cloud.projectdiscovery.io/scans")
 
 	gologger.Print().Msgf("\n")
 	gologger.Info().Label("HELP").Msgf("To terminate, press Ctrl+C.")
