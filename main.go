@@ -28,6 +28,7 @@ import (
 	"github.com/projectdiscovery/tunnelx/sshr"
 	envutil "github.com/projectdiscovery/utils/env"
 	iputil "github.com/projectdiscovery/utils/ip"
+	osutils "github.com/projectdiscovery/utils/os"
 	sliceutil "github.com/projectdiscovery/utils/slice"
 	"github.com/rs/xid"
 	"golang.org/x/crypto/ssh"
@@ -238,10 +239,10 @@ func parseArguments() error {
 		flagSet.StringVarEnv(&AgentName, "name", "", hostname, "AGENT_NAME", "specify a network name (optional)"),
 	)
 	flagSet.CreateGroup("output", "Output",
-		flagSet.BoolVarP(&noColor, "no-color", "nc", true, "disable output content coloring (ANSI escape codes)"),
+		flagSet.BoolVarP(&noColor, "no-color", "nc", false, "disable output content coloring (ANSI escape codes)"),
 	)
 
-	if noColor {
+	if noColor || osutils.IsWindows() {
 		gologger.DefaultLogger.SetFormatter(formatter.NewCLI(true))
 	}
 	return flagSet.Parse()
