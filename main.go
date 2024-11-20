@@ -93,6 +93,10 @@ func main() {
 		gologger.Fatal().Msgf("error parsing arguments: %v", err)
 	}
 
+	if noColor || osutils.IsWindows() {
+		gologger.DefaultLogger.SetFormatter(formatter.NewCLI(true))
+	}
+
 	if err := process(); err != nil {
 		gologger.Fatal().Msgf("%s", err)
 	}
@@ -241,10 +245,6 @@ func parseArguments() error {
 	flagSet.CreateGroup("output", "Output",
 		flagSet.BoolVarP(&noColor, "no-color", "nc", false, "disable output content coloring (ANSI escape codes)"),
 	)
-
-	if noColor || osutils.IsWindows() {
-		gologger.DefaultLogger.SetFormatter(formatter.NewCLI(true))
-	}
 	return flagSet.Parse()
 }
 
