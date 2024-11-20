@@ -23,10 +23,12 @@ import (
 	"github.com/projectdiscovery/freeport"
 	"github.com/projectdiscovery/goflags"
 	"github.com/projectdiscovery/gologger"
+	"github.com/projectdiscovery/gologger/formatter"
 	"github.com/projectdiscovery/gologger/levels"
 	"github.com/projectdiscovery/tunnelx/sshr"
 	envutil "github.com/projectdiscovery/utils/env"
 	iputil "github.com/projectdiscovery/utils/ip"
+	osutils "github.com/projectdiscovery/utils/os"
 	sliceutil "github.com/projectdiscovery/utils/slice"
 	"github.com/rs/xid"
 	"golang.org/x/crypto/ssh"
@@ -45,6 +47,9 @@ var (
 	AgentName string
 	// proxy password is the PDCP_API_KEY and is required
 	proxyPassword string
+
+	// NoColor is a flag to enable or disable color output
+	noColor bool
 
 	httpClient = &http.Client{
 		Timeout: 10 * time.Second,
@@ -86,6 +91,10 @@ func main() {
 
 	if err := parseArguments(); err != nil {
 		gologger.Fatal().Msgf("error parsing arguments: %v", err)
+	}
+
+	if noColor || osutils.IsWindows() {
+		gologger.DefaultLogger.SetFormatter(formatter.NewCLI(true))
 	}
 
 	if err := process(); err != nil {
@@ -232,6 +241,9 @@ func parseArguments() error {
 	flagSet.CreateGroup("Configuration", "Configuration",
 		flagSet.StringVarEnv(&proxyPassword, "auth", "", "", "PDCP_API_KEY", "set your ProjectDiscovery API key for authentication"),
 		flagSet.StringVarEnv(&AgentName, "name", "", hostname, "AGENT_NAME", "specify a network name (optional)"),
+	)
+	flagSet.CreateGroup("output", "Output",
+		flagSet.BoolVarP(&noColor, "no-color", "nc", false, "disable output content coloring (ANSI escape codes)"),
 	)
 	return flagSet.Parse()
 }
