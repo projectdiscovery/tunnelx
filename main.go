@@ -34,6 +34,8 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+const version = "v0.0.1"
+
 var (
 	PunchHoleHost     = envutil.GetEnvOrDefault("PUNCH_HOLE_HOST", "proxy.projectdiscovery.io")
 	PunchHolePort     = envutil.GetEnvOrDefault("PUNCH_HOLE_SSH_PORT", "20022")
@@ -50,6 +52,9 @@ var (
 
 	// NoColor is a flag to enable or disable color output
 	noColor bool
+
+	// showVersion is a flag to enable or disable version output
+	showVersion bool
 
 	httpClient = &http.Client{
 		Timeout: 10 * time.Second,
@@ -91,6 +96,11 @@ func main() {
 
 	if err := parseArguments(); err != nil {
 		gologger.Fatal().Msgf("error parsing arguments: %v", err)
+	}
+
+	if showVersion {
+		gologger.Info().Msgf("Current Version: %s\n", version)
+		os.Exit(0)
 	}
 
 	if noColor || osutils.IsWindows() {
@@ -244,6 +254,9 @@ func parseArguments() error {
 	)
 	flagSet.CreateGroup("output", "Output",
 		flagSet.BoolVarP(&noColor, "no-color", "nc", false, "disable output content coloring (ANSI escape codes)"),
+	)
+	flagSet.CreateGroup("debug", "Debug",
+		flagSet.BoolVar(&showVersion, "version", false, "show version of the project"),
 	)
 	return flagSet.Parse()
 }
