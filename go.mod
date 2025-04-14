@@ -1,6 +1,7 @@
 module github.com/projectdiscovery/tunnelx
 
 go 1.21.4
+toolchain go1.24.1
 
 require (
 	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5
@@ -10,7 +11,7 @@ require (
 	github.com/projectdiscovery/gologger v1.1.30
 	github.com/projectdiscovery/utils v0.2.18
 	github.com/rs/xid v1.6.0
-	golang.org/x/crypto v0.28.0
+	golang.org/x/crypto v0.35.0
 )
 
 require (
@@ -46,7 +47,7 @@ require (
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/net v0.30.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.26.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	gopkg.in/djherbis/times.v1 v1.3.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
