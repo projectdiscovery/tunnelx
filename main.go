@@ -410,6 +410,7 @@ func inFunctionTickCallback(ctx context.Context, first bool) error {
 	q := req.URL.Query()
 	q.Add("os", runtime.GOOS)
 	q.Add("arch", runtime.GOARCH)
+	q.Add("type", "tunnel")
 	q.Add("id", AgentID)
 	req.URL.RawQuery = q.Encode()
 	req.Header.Set("X-API-Key", proxyPassword)
