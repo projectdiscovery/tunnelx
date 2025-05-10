@@ -52,16 +52,17 @@ You can run TunnelX on different networks by specifying unique network names. Th
    ```
 
 3. **Run as a systemd service: If you want to run TunnelX under systemd:**
-   Update the deployment/systemd/tunnelx.service file: 
-      - Set Environment="PDCP_API_KEY=your_api_key_here" 
-      - Add your username under User= and set WorkingDirectory= to the TunnelX directory.
-   Copy, execute and enable the service:
-   ```sh
-    sudo cp deployment/systemd/tunnelx.service /etc/systemd/system/tunnelx.service
-    sudo systemctl daemon-reload
-    sudo systemctl enable tunnelx
-    sudo systemctl start tunnelx
-   ```
+
+   - Update the deployment/systemd/tunnelx.service file:
+         - Set Environment="PDCP_API_KEY=your_api_key_here" 
+         - Add your username under User= and set WorkingDirectory= to the TunnelX directory.
+   - Copy, execute and enable the service:
+      ```sh
+       sudo cp deployment/systemd/tunnelx.service /etc/systemd/system/tunnelx.service
+       sudo systemctl daemon-reload
+       sudo systemctl enable tunnelx
+       sudo systemctl start tunnelx
+      ```
 
 4. After successful connection, navigate to [ProjectDiscovery Scans](https://cloud.projectdiscovery.io/scans) to create and manage scans using the established connection.
 
