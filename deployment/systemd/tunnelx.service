@@ -1,0 +1,43 @@
+
+# ------------------------
+# TunnelX systemd service
+# ------------------------
+
+[Unit]
+# Description of the service (shows up in systemctl status)
+Description=TunnelX - Secure Ingress Tunneling Service
+
+# Ensure TunnelX starts only after the network is up
+After=network.target
+
+[Service]
+# The service runs in the foreground (doesn't fork itself)
+Type=simple
+
+# Set environment variables used by TunnelX (API key for authentication)
+Environment="PDCP_API_KEY=your_api_key_here"
+
+# Command to start TunnelX, using the environment variable defined above
+# ExecStart path to the tunnelx binary
+ExecStart=/home/username/tunnelx/tunnelx -auth ${PDCP_API_KEY}
+
+# Restart the service automatically if it crashes
+Restart=on-failure
+
+# Delay (in seconds) before attempting restart after failure
+RestartSec=5
+
+# The user under which the service will run (must have permissions to execute the binary)
+User=username
+
+# Working directory for the service — used for relative file paths or logging if applicable
+WorkingDirectory=/home/username/tunnelx
+
+[Install]
+# Specifies when the service should be started — in this case, during normal system boot
+WantedBy=multi-user.target
+
+
+
+
+
