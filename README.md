@@ -53,9 +53,8 @@ You can run TunnelX on different networks by specifying unique network names. Th
 
 3. **Run as a systemd service: If you want to run TunnelX under systemd:**
 
-   - Update the deployment/systemd/tunnelx.service file:
-         - Set Environment="PDCP_API_KEY=your_api_key_here" 
-         - Add your username under User= and set WorkingDirectory= to the TunnelX directory.
+   - Update the deployment/systemd/tunnelx.service file - Set Environment="PDCP_API_KEY=your_api_key_here"
+   - Add your username under ExecStart=, User= and set WorkingDirectory= to the TunnelX directory in deployment/systemd/tunnelx.service file.
    - Copy, execute and enable the service:
       ```sh
        sudo cp deployment/systemd/tunnelx.service /etc/systemd/system/tunnelx.service
