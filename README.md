@@ -61,6 +61,7 @@ You can run TunnelX on different networks by specifying unique network names. Th
        sudo systemctl daemon-reload
        sudo systemctl enable tunnelx
        sudo systemctl start tunnelx
+       sudo systemctl status tunnelx
       ```
 
 4. After successful connection, navigate to [ProjectDiscovery Scans](https://cloud.projectdiscovery.io/scans) to create and manage scans using the established connection.
