@@ -18,7 +18,6 @@ import (
 	"syscall"
 	"time"
 
-	socks5 "github.com/armon/go-socks5"
 	"github.com/pkg/errors"
 	"github.com/projectdiscovery/freeport"
 	"github.com/projectdiscovery/goflags"
@@ -31,6 +30,7 @@ import (
 	osutils "github.com/projectdiscovery/utils/os"
 	sliceutil "github.com/projectdiscovery/utils/slice"
 	"github.com/rs/xid"
+	socks5 "github.com/things-go/go-socks5"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -76,7 +76,7 @@ type credentialStore struct {
 	password string
 }
 
-func (cs *credentialStore) Valid(user, password string) bool {
+func (cs *credentialStore) Valid(user, password, userAddr string) bool {
 	return user == cs.user && password == cs.password
 }
 
@@ -131,23 +131,14 @@ func process() error {
 		}
 	}
 
-	conf := &socks5.Config{
-		Logger: logger,
-	}
-
 	if proxyPassword == "" {
 		return errors.Errorf("PDCP_API_KEY is not configured")
 	}
 
-	auth := socks5.UserPassAuthenticator{
-		Credentials: &credentialStore{user: proxyUsername, password: proxyPassword},
-	}
-	conf.AuthMethods = []socks5.Authenticator{auth}
-
-	server, err := socks5.New(conf)
-	if err != nil {
-		return errors.Wrap(err, "error creating socks5 server")
-	}
+	server := socks5.NewServer(
+		socks5.WithLogger(socks5.NewLogger(logger)),
+		socks5.WithCredential(&credentialStore{user: proxyUsername, password: proxyPassword}),
+	)
 
 	var listenIp string
 	// Check if the service is accessible from the internet
