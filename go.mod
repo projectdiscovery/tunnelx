@@ -1,17 +1,17 @@
 module github.com/projectdiscovery/tunnelx
 
-go 1.24.0
+go 1.24
 
 toolchain go1.24.5
 
 require (
-	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5
 	github.com/pkg/errors v0.9.1
 	github.com/projectdiscovery/freeport v0.0.7
 	github.com/projectdiscovery/goflags v0.1.65
 	github.com/projectdiscovery/gologger v1.1.30
 	github.com/projectdiscovery/utils v0.2.18
 	github.com/rs/xid v1.6.0
+	github.com/things-go/go-socks5 v0.0.6
 	golang.org/x/crypto v0.36.0
 )
 
