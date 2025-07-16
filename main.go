@@ -271,7 +271,9 @@ func getPublicIP() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	ip, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -350,7 +352,9 @@ func getFreePortFromServer() (*freeport.Port, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	var result struct {
 		Port int `json:"port"`
@@ -409,7 +413,9 @@ func inFunctionTickCallback(ctx context.Context, first bool) error {
 		log.Printf("failed to call /in endpoint: %v", err)
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("failed to read response body: %v", err)
@@ -450,7 +456,9 @@ func Out(ctx context.Context) error {
 		log.Printf("failed to call /out endpoint: %v", err)
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("failed to read response body: %v", err)
@@ -480,7 +488,9 @@ func renameAgent(ctx context.Context, name string) error {
 	if err != nil {
 		return fmt.Errorf("failed to call /rename endpoint: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

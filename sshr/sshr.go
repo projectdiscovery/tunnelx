@@ -38,13 +38,17 @@ func (s *SSHR) Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("error dialing [%s]: %v", s.config.SSHServer, err)
 	}
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 
 	listener, err := conn.Listen("tcp", s.config.RemoteListenAddr)
 	if err != nil {
 		return err
 	}
-	defer listener.Close()
+	defer func() {
+		_ = listener.Close()
+	}()
 
 	if s.config.SuccessHook != nil {
 		s.config.SuccessHook()
