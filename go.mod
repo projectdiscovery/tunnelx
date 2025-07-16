@@ -1,7 +1,8 @@
 module github.com/projectdiscovery/tunnelx
 
-go 1.21.4
-toolchain go1.24.1
+go 1.24.0
+
+toolchain go1.24.5
 
 require (
 	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5
