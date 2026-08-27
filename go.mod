@@ -10,7 +10,7 @@ require (
 	github.com/projectdiscovery/utils v0.2.18
 	github.com/rs/xid v1.6.0
 	github.com/things-go/go-socks5 v0.0.6
-	golang.org/x/crypto v0.51.0
+	golang.org/x/crypto v0.52.0
 )
 
 require (
