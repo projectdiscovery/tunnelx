@@ -2,6 +2,8 @@ module github.com/projectdiscovery/tunnelx
 
 go 1.25.0
 
+toolchain go1.26.10
+
 require (
 	github.com/pkg/errors v0.9.1
 	github.com/projectdiscovery/freeport v0.0.7
