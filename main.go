@@ -30,7 +30,6 @@ import (
 	osutils "github.com/projectdiscovery/utils/os"
 	sliceutil "github.com/projectdiscovery/utils/slice"
 	"github.com/rs/xid"
-	socks5 "github.com/things-go/go-socks5"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -55,6 +54,10 @@ var (
 
 	// showVersion is a flag to enable or disable version output
 	showVersion bool
+
+	// allowDestinations and denyDestinations restrict where the SOCKS5 proxy connects
+	allowDestinations goflags.StringSlice
+	denyDestinations  goflags.StringSlice
 
 	httpClient = &http.Client{
 		Timeout: 10 * time.Second,
@@ -135,10 +138,11 @@ func process() error {
 		return errors.Errorf("PDCP_API_KEY is not configured")
 	}
 
-	server := socks5.NewServer(
-		socks5.WithLogger(socks5.NewLogger(logger)),
-		socks5.WithCredential(&credentialStore{user: proxyUsername, password: proxyPassword}),
-	)
+	policy, err := newDestinationPolicy(allowDestinations, denyDestinations)
+	if err != nil {
+		return err
+	}
+	server := newSocksServer(policy, &credentialStore{user: proxyUsername, password: proxyPassword})
 
 	var listenIp string
 	// Check if the service is accessible from the internet
@@ -149,8 +153,9 @@ func process() error {
 		listenIp, _ = onceRemoteIp()
 		gologger.Print().Msgf("Service is accessible from the internet with ip: %s", listenIp)
 	} else {
-		gologger.Warning().Msgf("service is not accessible from the internet, listening on all interfaces")
-		listenIp = "0.0.0.0"
+		// only the local end of the ssh reverse tunnel connects to the proxy
+		gologger.Warning().Msgf("service is not accessible from the internet, listening on 127.0.0.1 for the tunnel")
+		listenIp = "127.0.0.1"
 	}
 
 	socks5proxyPort, err = freeport.GetFreeTCPPort(listenIp)
@@ -242,6 +247,8 @@ func parseArguments() error {
 	flagSet.CreateGroup("Configuration", "Configuration",
 		flagSet.StringVarEnv(&proxyPassword, "auth", "", "", "PDCP_API_KEY", "set your ProjectDiscovery API key for authentication"),
 		flagSet.StringVarEnv(&AgentName, "name", "", hostname, "AGENT_NAME", "specify a network name (optional)"),
+		flagSet.StringSliceVar(&allowDestinations, "allow", nil, "only allow connections to these IPs/CIDRs (file or comma separated)", goflags.FileCommaSeparatedStringSliceOptions),
+		flagSet.StringSliceVar(&denyDestinations, "deny", nil, "deny connections to these IPs/CIDRs (file or comma separated)", goflags.FileCommaSeparatedStringSliceOptions),
 	)
 	flagSet.CreateGroup("output", "Output",
 		flagSet.BoolVarP(&noColor, "no-color", "nc", false, "disable output content coloring (ANSI escape codes)"),
@@ -320,7 +327,7 @@ func createTunnelsWithGoSSH(ctx context.Context) error {
 		SSHServer:        server,
 		SSHClientConfig:  sshConfig,
 		RemoteListenAddr: fmt.Sprintf("0.0.0.0:%d", reverseProxyPort.Port),
-		LocalTarget:      fmt.Sprintf("localhost:%d", socks5proxyPort.Port),
+		LocalTarget:      fmt.Sprintf("127.0.0.1:%d", socks5proxyPort.Port),
 		Logger:           slog.Default(),
 		SuccessHook: func() {
 			connectionSucceededCount++
