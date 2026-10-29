@@ -141,18 +141,22 @@ func TestSocksAllowsCustomerNetwork(t *testing.T) {
 	}
 	srv := &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = io.WriteString(w, "customer") })}
 	go func() { _ = srv.Serve(listener) }()
-	defer srv.Close()
+	defer func() { _ = srv.Close() }()
 
 	dialer, err := proxy.SOCKS5("tcp", startTestProxy(t), &proxy.Auth{User: "pdcp", Password: "key"}, proxy.Direct)
 	if err != nil {
 		t.Fatal(err)
 	}
-	client := &http.Client{Transport: &http.Transport{Dial: dialer.Dial}}
+	contextDialer, ok := dialer.(proxy.ContextDialer)
+	if !ok {
+		t.Fatal("socks5 dialer does not support DialContext")
+	}
+	client := &http.Client{Transport: &http.Transport{DialContext: contextDialer.DialContext}}
 	resp, err := client.Get("http://" + listener.Addr().String() + "/")
 	if err != nil {
 		t.Fatalf("customer network host not reachable: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	if string(body) != "customer" {
 		t.Fatalf("body %q", body)

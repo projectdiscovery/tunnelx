@@ -26,7 +26,7 @@ builds:
       goarch: 'arm64'
 
   binary: '{{ .ProjectName }}'
-  main: main.go
+  main: .
 
 archives:
 - formats: [zip]
