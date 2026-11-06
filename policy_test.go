@@ -21,6 +21,7 @@ func TestDestinationPolicyAllowed(t *testing.T) {
 	denied := []string{
 		"127.0.0.1", "127.8.8.8", "0.0.0.0", "0.1.2.3", "::1", "::", "::ffff:127.0.0.1", "::ffff:0.0.0.0",
 		"169.254.169.254", "::ffff:169.254.169.254", "fe80::1", "fe80::1%eth0", "fd00:ec2::254", "224.0.0.1", "ff02::1",
+		"fd20:ce::254", "100.100.100.200", "::ffff:100.100.100.200",
 		"10.9.1.1", "192.168.50.7", "::ffff:10.9.1.1",
 	}
 	for _, a := range denied {
@@ -29,7 +30,7 @@ func TestDestinationPolicyAllowed(t *testing.T) {
 		}
 	}
 	// the customer network (private ranges) and public hosts stay reachable
-	for _, a := range []string{"10.0.0.5", "172.16.3.4", "192.168.1.10", "100.64.1.1", "fd12:3456::1", "8.8.8.8", "::ffff:10.0.0.5"} {
+	for _, a := range []string{"10.0.0.5", "172.16.3.4", "192.168.1.10", "100.64.1.1", "100.100.100.201", "fd12:3456::1", "fd20:ce::253", "8.8.8.8", "::ffff:10.0.0.5"} {
 		if !policy.allowed(netip.MustParseAddr(a)) {
 			t.Errorf("%s denied, want allowed", a)
 		}

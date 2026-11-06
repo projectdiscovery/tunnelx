@@ -17,7 +17,9 @@ var alwaysDenied = []netip.Prefix{
 	netip.MustParsePrefix("0.0.0.0/8"),
 	netip.MustParsePrefix("127.0.0.0/8"),
 	netip.MustParsePrefix("169.254.0.0/16"),
-	netip.MustParsePrefix("fd00:ec2::254/128"), // AWS metadata (IPv6)
+	netip.MustParsePrefix("fd00:ec2::254/128"),  // AWS metadata (IPv6)
+	netip.MustParsePrefix("fd20:ce::254/128"),   // GCP metadata (IPv6)
+	netip.MustParsePrefix("100.100.100.200/32"), // Alibaba Cloud metadata
 }
 
 // destinationPolicy is the SOCKS5 rule set of the tunnel. It allows only CONNECT,
