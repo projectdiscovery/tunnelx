@@ -76,6 +76,10 @@ You can run TunnelX on different networks by specifying unique network names. Th
 | ------- | ----------------------------------------------------------------------------- |
 | `-auth` | Your ProjectDiscovery API key (required).                                     |
 | `-name` | (Optional) Specify a custom network name. Default is your machine’s hostname. |
+| `-allow` | (Optional) Only allow connections to these IPs/CIDRs (file or comma separated). |
+| `-deny` | (Optional) Deny connections to these IPs/CIDRs (file or comma separated). |
+
+The proxy accepts only CONNECT requests and never connects to the tunnel host itself (loopback) or to link-local addresses such as the cloud metadata service (`169.254.169.254`). Private network ranges stay reachable.
 
 **Example:**
 
