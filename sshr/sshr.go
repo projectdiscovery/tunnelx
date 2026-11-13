@@ -27,9 +27,19 @@ type Config struct {
 }
 
 // New tun.
+//
+// The caller is responsible for setting a secure SSHClientConfig.HostKeyCallback.
+// If HostKeyCallback is nil, New returns an error rather than silently falling
+// back to ssh.InsecureIgnoreHostKey(), which allows man-in-the-middle attacks.
+//
+// For quick local/dev use the caller may pass ssh.InsecureIgnoreHostKey()
+// explicitly, but that must be a deliberate decision at the call site.
 func New(config Config) (*SSHR, error) {
-	config.SSHClientConfig.HostKeyCallback = ssh.InsecureIgnoreHostKey()
-
+	if config.SSHClientConfig.HostKeyCallback == nil {
+		return nil, fmt.Errorf("sshr: SSHClientConfig.HostKeyCallback must not be nil; " +
+			"provide a verifying callback or explicitly pass ssh.InsecureIgnoreHostKey() " +
+			"if host-key verification is intentionally disabled")
+	}
 	return &SSHR{config: config}, nil
 }
 
